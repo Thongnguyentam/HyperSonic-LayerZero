@@ -1,0 +1,35 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import "./NativeLiquidityPool.sol";
+
+contract FactoryStorage {
+    uint256 public constant TARGET = 3 ether;
+    uint256 public constant TOKEN_LIMIT = 500_000 ether;
+    uint256 public constant BASE_REWARD_PERCENTAGE = 3; // 3% reward
+    
+    // Pack related variables together to save gas
+    uint256 public fee;
+    uint256 public totalTokens;
+    address public lzEndpoint;
+    NativeLiquidityPool public nativeLiquidityPool;
+
+    address[] public tokens;
+    mapping(address => TokenSale) public tokenToSale;
+    mapping(address => mapping(address => uint256)) public userTokenContributions;
+    mapping(address => mapping(address => uint256)) public userEthContributions;
+    mapping(address => mapping(address => bool)) public hasClaimedReward;
+    mapping(address => address[]) public tokenContributors;
+
+    struct TokenSale {
+        address token;
+        string name;
+        string metadataURI;
+        address creator;
+        uint256 sold;
+        uint256 raised;
+        bool isOpen;
+        bool isLiquidityCreated;
+    }
+
+} 
