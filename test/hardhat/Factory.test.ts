@@ -20,6 +20,7 @@ describe('Factory Test', function () {
     let Token: ContractFactory
     let NativeLiquidityPool: ContractFactory
     let EndpointV2Mock: ContractFactory
+    let CrossChainMessenger: ContractFactory
 
     // Contracts
     let factoryA: Contract
@@ -27,6 +28,8 @@ describe('Factory Test', function () {
     let mockEndpointV2A: Contract
     let mockEndpointV2B: Contract
     let liquidityPool: Contract
+    let crosschainMessengerA: Contract
+    let crosschainMessengerB: Contract
 
     // Signers
     let ownerA: SignerWithAddress
@@ -39,6 +42,7 @@ describe('Factory Test', function () {
         Factory = await ethers.getContractFactory('Factory')
         Token = await ethers.getContractFactory('Token')
         NativeLiquidityPool = await ethers.getContractFactory('NativeLiquidityPool')
+        CrossChainMessenger = await ethers.getContractFactory('CrossChainMessenger')
 
         // Get signers
         const signers = await ethers.getSigners()
@@ -55,20 +59,29 @@ describe('Factory Test', function () {
         mockEndpointV2B = await EndpointV2Mock.deploy(eidB)
 
         // Deploy factory contracts with correct owners
-        factoryA = await Factory.connect(ownerA).deploy(FEE, mockEndpointV2A.address)
-        factoryB = await Factory.connect(ownerB).deploy(FEE, mockEndpointV2B.address)
+        factoryA = await Factory.connect(ownerA).deploy(FEE, mockEndpointV2A.address, eidA)
+        factoryB = await Factory.connect(ownerB).deploy(FEE, mockEndpointV2B.address, eidB)
 
         // Deploy liquidity pool
         liquidityPool = await NativeLiquidityPool.deploy(factoryA.address)
         await factoryA.connect(ownerA).setLiquidityPool(liquidityPool.address)
 
+        // Get CrossChainMessenger addresses
+        const crosschainMessengerAddressA = await factoryA.crossChainMessenger()
+        const crosschainMessengerAddressB = await factoryB.crossChainMessenger()
+
         // Set up cross-chain communication
-        await mockEndpointV2A.setDestLzEndpoint(factoryB.address, mockEndpointV2B.address)
-        await mockEndpointV2B.setDestLzEndpoint(factoryA.address, mockEndpointV2A.address)
+        await mockEndpointV2A.setDestLzEndpoint(crosschainMessengerAddressB, mockEndpointV2B.address)
+        await mockEndpointV2B.setDestLzEndpoint(crosschainMessengerAddressA, mockEndpointV2A.address)
+
+
+        // Create contract instances
+        crosschainMessengerA = CrossChainMessenger.attach(crosschainMessengerAddressA)
+        crosschainMessengerB = CrossChainMessenger.attach(crosschainMessengerAddressB)
 
         // Set peers using the correct owners
-        await factoryA.connect(ownerA).setPeer(eidB, ethers.utils.zeroPad(factoryB.address, 32))
-        await factoryB.connect(ownerB).setPeer(eidA, ethers.utils.zeroPad(factoryA.address, 32))
+        await crosschainMessengerA.connect(ownerA).setPeer(eidB, ethers.utils.zeroPad(crosschainMessengerB.address, 32))
+        await crosschainMessengerB.connect(ownerB).setPeer(eidA, ethers.utils.zeroPad(crosschainMessengerA.address, 32))
         console.log("Factory A", factoryA.address)
         console.log("Factory B", factoryB.address)
         console.log("Liquidity Pool", liquidityPool.address)
@@ -96,6 +109,7 @@ describe('Factory Test', function () {
 
     describe('Cross chain token creation', function () {
         it('should send token creation request to remote chain', async function () {
+            
             const options = Options.newOptions().addExecutorLzReceiveOption(200000, 0).toHex()
     
             // Get quote for the message send operation
@@ -109,6 +123,7 @@ describe('Factory Test', function () {
                 false
             )
             console.log("nativeFee:", nativeFee)
+
             // Send token creation request from factoryA to factoryB
             await factoryA.connect(user).sendLaunchToRemoteChain(
                 eidB,

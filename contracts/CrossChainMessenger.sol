@@ -3,14 +3,14 @@ pragma solidity ^0.8.20;
 
 import { OApp, Origin, MessagingFee } from "@layerzerolabs/oapp-evm/contracts/oapp/OApp.sol";
 import "./BaseContract.sol";
-
+import "hardhat/console.sol";
 contract CrossChainMessenger is BaseContract, OApp {
     event TokenLaunchedOnRemoteChain(uint32 indexed dstEid, string name, string symbol);
     event TokenCreatedOnRemoteChain(string name, string symbol, address creator);
 
     address public factory;
 
-    constructor(uint256 _fee, address _lzEndpoint) BaseContract(_fee, _lzEndpoint) OApp(_lzEndpoint, msg.sender) {}
+    constructor(uint256 _fee, address _lzEndpoint) BaseContract(_fee, _lzEndpoint) OApp(_lzEndpoint, tx.origin) {}
 
     function setFactory(address _factory) external onlyOwner {
         factory = _factory;
@@ -38,7 +38,8 @@ contract CrossChainMessenger is BaseContract, OApp {
         address _creator,
         bytes calldata _options
     ) external payable {
-        require(msg.value >= fee);
+        (uint256 nativeFee, ) = quote(_dstEid, _name, _symbol, _metadataURI, _creator, _options, true);
+        require(msg.value >= nativeFee, "Insufficient fee");
         bytes memory payload = abi.encode(_name, _symbol, _metadataURI, _creator);
         _lzSend(_dstEid, payload, _options, MessagingFee(msg.value, 0), payable(msg.sender));
         emit TokenLaunchedOnRemoteChain(_dstEid, _name, _symbol);

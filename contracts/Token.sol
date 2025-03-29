@@ -3,60 +3,39 @@ pragma solidity ^0.8.20;
 
 import { OFT } from "@layerzerolabs/oft-evm/contracts/OFT.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import "hardhat/console.sol";
 
 contract Token is OFT {
 
     address public creator;
     string public metadataURI; // Stores IPFS metadata JSON URI
     uint256 public constant _totalSupply = 1_000_000 ether;  // Fixed total supply
-    // // Add mapping to track unique holders
-    // mapping(address => bool) public isHolder;
-    // uint256 public totalHolders;
-
+    uint32 public eid;
     constructor(
         string memory _name,
         string memory _symbol,
-        string memory _metadataURI,
         address _creator,
         address _lzEndpoint
-    ) OFT(_name, _symbol, _lzEndpoint, _creator) Ownable(_creator) {
-        initializeToken(_metadataURI, _creator);
-    }
+    ) OFT(_name, _symbol, _lzEndpoint, _creator) Ownable(_creator) { }
 
     function initializeToken(
         string memory _metadataURI,
-        address _creator
-    ) internal {
+        address _creator,
+        uint32 _eid
+    ) external {
+        console.log("Initializing token");
+        console.log("Token creator: ", _creator);
+        console.log("Token eid: ", _eid);
+        console.log("Token metadataURI: ", _metadataURI);
+        eid = _eid;
         creator = _creator;
         metadataURI = _metadataURI;
-        _mint(msg.sender, _totalSupply);
+        _credit(msg.sender, _totalSupply, _eid);
     }
-    
+
     function mint(address receiver, uint256 mintQty) external onlyOwner {
-        _mint(receiver, mintQty);
+        require(receiver != address(0), "Cannot mint to zero address");
+        _credit(receiver, mintQty, eid);
     }
 
-
-    // function burn(uint burnQty, address from) external {
-    //     require(msg.sender == owner, "Burn can only be called by the owner");
-    //     _burn(from, burnQty);
-    // }
-
-    // function _update(address from, address to, uint256 amount) internal virtual override{
-    //     super._update(from, to, amount);
-
-    //     if(from != address(0) && balanceOf(from) == 0){
-    //         isHolder[from] = false;
-    //         totalHolders--;
-    //     }
-        
-    //     if(to != address(0) && !isHolder[to]){
-    //         isHolder[to] = true;
-    //         totalHolders++;
-    //     }
-    // }
-
-    // function getTotalHolders() external view returns (uint256){
-    //     return totalHolders;
-    // }
 }
