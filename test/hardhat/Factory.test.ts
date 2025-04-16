@@ -16,6 +16,7 @@ describe('Factory and CrossChainMessenger Test', function () {
 
     // Contract factories
     let Factory: ContractFactory
+    let TokenSaleManager: ContractFactory
     let CrossChainMessenger: ContractFactory
     let NativeLiquidityPool: ContractFactory
     let Token: ContractFactory
@@ -24,6 +25,8 @@ describe('Factory and CrossChainMessenger Test', function () {
     // Contract instances
     let factoryA: Contract
     let factoryB: Contract
+    let tokenSaleManagerA: Contract
+    let tokenSaleManagerB: Contract
     let crosschainMessengerA: Contract
     let crosschainMessengerB: Contract
     let liquidityPool: Contract
@@ -46,6 +49,7 @@ describe('Factory and CrossChainMessenger Test', function () {
 
         // Get contract factories
         Factory = await ethers.getContractFactory('Factory')
+        TokenSaleManager = await ethers.getContractFactory('TokenSaleManager')
         CrossChainMessenger = await ethers.getContractFactory('CrossChainMessenger')
         NativeLiquidityPool = await ethers.getContractFactory('NativeLiquidityPool')
         Token = await ethers.getContractFactory('Token')
@@ -68,9 +72,20 @@ describe('Factory and CrossChainMessenger Test', function () {
         factoryA = await Factory.connect(ownerA).deploy(FEE, eidA, mockEndpointV2A.address)
         factoryB = await Factory.connect(ownerB).deploy(FEE, eidB, mockEndpointV2B.address)
 
+        // Deploy token sale managers
+        tokenSaleManagerA = await TokenSaleManager.connect(ownerA).deploy(factoryA.address)
+        tokenSaleManagerB = await TokenSaleManager.connect(ownerB).deploy(factoryB.address)
+
+        // Link factories to token sale managers
+        await factoryA.connect(ownerA).setTokenSaleManager(tokenSaleManagerA.address)
+        await factoryB.connect(ownerB).setTokenSaleManager(tokenSaleManagerB.address)
+
         // Deploy liquidity pool
         liquidityPool = await NativeLiquidityPool.deploy(factoryA.address)
-        await factoryA.connect(ownerA).setLiquidityPool(liquidityPool.address)
+        
+        // Set liquidity pool in token sale manager
+        await tokenSaleManagerA.connect(ownerA).setLiquidityPool(liquidityPool.address)
+        await tokenSaleManagerB.connect(ownerB).setLiquidityPool(liquidityPool.address)
 
         // Deploy messengers
         crosschainMessengerA = await CrossChainMessenger.deploy(
@@ -102,6 +117,8 @@ describe('Factory and CrossChainMessenger Test', function () {
 
         console.log("Factory A", factoryA.address)
         console.log("Factory B", factoryB.address)
+        console.log("TokenSaleManager A", tokenSaleManagerA.address)
+        console.log("TokenSaleManager B", tokenSaleManagerB.address) 
         console.log("Liquidity Pool", liquidityPool.address)
         console.log("Endpoint A", mockEndpointV2A.address)
         console.log("Endpoint B", mockEndpointV2B.address)
@@ -117,11 +134,11 @@ describe('Factory and CrossChainMessenger Test', function () {
         it('should create a token with correct parameters', async function () {
             await factoryA.connect(user).create(TOKEN_NAME, TOKEN_SYMBOL, TOKEN_METADATA, ethers.constants.AddressZero, {value: FEE})
 
-            const tokenCount = await factoryA.totalTokens()
+            const tokenCount = await tokenSaleManagerA.totalTokens()
             expect(tokenCount.eq(1)).to.be.true
 
-            const tokenAddress = await factoryA.tokens(0)
-            const sale = await factoryA.getTokenSale(0)
+            const tokenAddress = await tokenSaleManagerA.tokens(0)
+            const sale = await tokenSaleManagerA.getTokenSale(0)
             expect(sale.token).to.equal(tokenAddress)
             expect(sale.creator).to.equal(user.address)
             expect(sale.sold.eq(0)).to.be.true
@@ -143,11 +160,11 @@ describe('Factory and CrossChainMessenger Test', function () {
             )
 
             // Check if token was created on chain B
-            const tokenCountB = await factoryB.totalTokens()
+            const tokenCountB = await tokenSaleManagerB.totalTokens()
             expect(tokenCountB).to.equal(1)
 
-            const tokenAddress = await factoryB.tokens(0)
-            const sale = await factoryB.getTokenSale(0)
+            const tokenAddress = await tokenSaleManagerB.tokens(0)
+            const sale = await tokenSaleManagerB.getTokenSale(0)
             expect(sale.token).to.equal(tokenAddress)
             expect(sale.creator).to.equal(user.address)
             expect(sale.sold).to.equal(0)
