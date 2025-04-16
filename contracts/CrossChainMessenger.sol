@@ -100,14 +100,14 @@ contract CrossChainMessenger is OApp {
 
     /**
      * @notice Sends a message to create a token on another chain
-     * @param targetChainId The target chain ID
+     * @param _dstEid The target chain ID
      * @param _name Token name
      * @param _symbol Token symbol
      * @param _metadataURI Token metadata URI
      * @param _creator Token creator address
      */
     function sendCreateTokenToOtherChain(
-        uint32 targetChainId,
+        uint32 _dstEid,
         string memory _name,
         string memory _symbol,
         string memory _metadataURI,
@@ -136,94 +136,94 @@ contract CrossChainMessenger is OApp {
 
         // Send message to other chain
         MessagingReceipt memory receipt = _lzSend(
-            targetChainId,
+            _dstEid,
             payload,
             options,
             MessagingFee(msg.value, 0),
             payable(_creator)
         );
         
-        emit MessageSentToChain(receipt.guid, msg.sender, targetChainId, payload);
+        emit MessageSentToChain(receipt.guid, msg.sender, _dstEid, payload);
     }
 
-    // /**
-    //  * @notice Sends a message to bridge tokens to another chain
-    //  * @param targetChainId The target chain ID
-    //  * @param _symbol Token symbol
-    //  * @param _recipient Recipient address
-    //  * @param _amount Amount of tokens
-    //  */ 
-    // function sendBridgeTokensToOtherChain(
-    //     uint32 targetChainId,
-    //     string memory _symbol,
-    //     address _recipient,
-    //     uint256 _amount
-    // ) external payable onlyFactory {
-    //     bytes32 messageId = keccak256(abi.encodePacked(
-    //         block.timestamp,
-    //         msg.sender,
-    //         _symbol,
-    //         _recipient,
-    //         _amount
-    //     ));
+    /**
+     * @notice Sends a message to bridge tokens to another chain
+     * @param _dstEid The target chain ID
+     * @param _symbol Token symbol
+     * @param _recipient Recipient address
+     * @param _amount Amount of tokens
+     */ 
+    function sendBridgeTokensToOtherChain(
+        uint32 _dstEid,
+        string memory _symbol,
+        address _recipient,
+        uint256 _amount
+    ) external payable onlyFactory {
+        bytes32 messageId = keccak256(abi.encodePacked(
+            block.timestamp,
+            msg.sender,
+            _symbol,
+            _recipient,
+            _amount
+        ));
 
-    //     bytes memory payload = abi.encode(
-    //         MSG_TYPE_BRIDGE_TOKENS,
-    //         messageId,
-    //         _symbol,
-    //         _recipient,
-    //         _amount
-    //     );
+        bytes memory payload = abi.encode(
+            MSG_TYPE_BRIDGE_TOKENS,
+            messageId,
+            _symbol,
+            _recipient,
+            _amount
+        );
 
-    //     // Get enforced options for this message type
-    //     bytes memory options = _getEnforcedOptions(targetChainId, MSG_TYPE_BRIDGE_TOKENS);
+        // Get enforced options for this message type
+        bytes memory options = "";
         
-    //     MessagingReceipt memory receipt = _lzSend(
-    //         targetChainId,
-    //         payload,
-    //         options,
-    //         MessagingFee(msg.value, 0),
-    //         payable(msg.sender)
-    //     );
+        MessagingReceipt memory receipt = _lzSend(
+            _dstEid,
+            payload,
+            options,
+            MessagingFee(msg.value, 0),
+            payable(msg.sender)
+        );
         
-    //     emit MessageSentToChain(receipt.guid, msg.sender, targetChainId, payload);
-    // }
+        emit MessageSentToChain(receipt.guid, msg.sender, _dstEid, payload);
+    }
     
     // /**
     //  * @notice Sends a message to notify other chains that liquidity has been created
     //  * @param targetChainId The target chain ID
     //  * @param _symbol Token symbol
     //  */
-    // function sendLiquidityCreatedToOtherChain(
-    //     uint32 targetChainId,
-    //     string memory _symbol
-    // ) external payable onlyFactory {
-    //     bytes32 messageId = keccak256(abi.encodePacked(
-    //         block.timestamp,
-    //         msg.sender,
-    //         _symbol,
-    //         "LIQUIDITY_CREATED"
-    //     ));
+    function sendLiquidityCreatedToOtherChain(
+        uint32 _dstEid,
+        string memory _symbol
+    ) external payable onlyFactory {
+        bytes32 messageId = keccak256(abi.encodePacked(
+            block.timestamp,
+            msg.sender,
+            _symbol,
+            "LIQUIDITY_CREATED"
+        ));
 
-    //     bytes memory payload = abi.encode(
-    //         MSG_TYPE_LIQUIDITY_CREATED,
-    //         messageId,
-    //         _symbol
-    //     );
+        bytes memory payload = abi.encode(
+            MSG_TYPE_LIQUIDITY_CREATED,
+            messageId,
+            _symbol
+        );
 
-    //     // Get enforced options for this message type
-    //     bytes memory options = _getEnforcedOptions(targetChainId, MSG_TYPE_LIQUIDITY_CREATED);
+        // Get enforced options for this message type
+        bytes memory options = "";
         
-    //     MessagingReceipt memory receipt = _lzSend(
-    //         targetChainId,
-    //         payload,
-    //         options,
-    //         MessagingFee(msg.value, 0),
-    //         payable(msg.sender)
-    //     );
+        MessagingReceipt memory receipt = _lzSend(
+            _dstEid,
+            payload,
+            options,
+            MessagingFee(msg.value, 0),
+            payable(msg.sender)
+        );
         
-    //     emit MessageSentToChain(receipt.guid, msg.sender, targetChainId, payload);
-    // }
+        emit MessageSentToChain(receipt.guid, msg.sender, _dstEid, payload);
+    }
 
     /**
      * @notice Helper function to convert bytes32 to address

@@ -180,13 +180,13 @@ contract Factory is Ownable {
         Token token = Token(tokenAddress);
         require(token.balanceOf(msg.sender) >= _amount, "Insufficient balance");
         
-        // // Send message to target chain to mint tokens
-        // crossChainMessenger.sendBridgeTokensToOtherChain(
-        //     targetChainId,
-        //     _symbol,
-        //     msg.sender,
-        //     _amount
-        // );
+        // Send message to target chain to mint tokens
+        crossChainMessenger.sendBridgeTokensToOtherChain(
+            targetChainId,
+            _symbol,
+            msg.sender,
+            _amount
+        );
 
         emit TokensBridged(tokenAddress, _symbol, msg.sender, _amount, targetChainId);
     }
@@ -256,15 +256,15 @@ contract Factory is Ownable {
         nativeLiquidityPool.addLiquidity{value: sale.raised}(_token, tokenBalance, contributors, contributorAmounts);
 
         // After liquidity is created, notify all peer chains
-        // if (sale.isOriginChain) {
-        //     uint32[] memory peers = crossChainMessenger.getPeerChainIds();
-        //     for (uint i = 0; i < peers.length; i++) {
-        //         crossChainMessenger.sendLiquidityCreatedToOtherChain(
-        //             peers[i],
-        //             sale.symbol
-        //         );
-        //     }
-        // }
+        if (sale.isOriginChain) {
+            uint32[] memory peers = crossChainMessenger.getPeerChainIds();
+            for (uint i = 0; i < peers.length; i++) {
+                crossChainMessenger.sendLiquidityCreatedToOtherChain(
+                    peers[i],
+                    sale.symbol
+                );
+            }
+        }
     }
 
     function calculateReward(address _token, address user) internal view returns (uint256) {
