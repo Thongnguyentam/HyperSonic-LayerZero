@@ -15,7 +15,7 @@ contract Token is OFT {
         string memory _metadataURI,
         uint256 _totalSupply,
         address _lzEndpoint,
-        address _delegate
+        address _delegate // tokenSaleManager
     ) OFT(_name, _symbol, _lzEndpoint, _delegate) Ownable(_delegate) {
         creator = _creator;
         metadataURI = _metadataURI;

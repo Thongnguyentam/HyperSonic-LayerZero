@@ -113,18 +113,18 @@ contract CrossChainMessenger is OApp {
         string memory _metadataURI,
         address _creator
     ) external payable onlyFactory {
-        bytes32 messageId = keccak256(abi.encodePacked(
-            block.timestamp,
-            msg.sender,
-            _name,
-            _symbol,
-            _creator
-        ));
+        // bytes32 messageId = keccak256(abi.encodePacked(
+        //     block.timestamp,
+        //     msg.sender,
+        //     _name,
+        //     _symbol,
+        //     _creator
+        // ));
 
         // Encode the message data
         bytes memory payload = abi.encode(
             MSG_TYPE_CREATE_TOKEN,
-            messageId,
+            // messageId,
             _name,
             _symbol,
             _metadataURI,
