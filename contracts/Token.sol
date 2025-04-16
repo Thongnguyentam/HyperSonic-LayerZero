@@ -3,39 +3,43 @@ pragma solidity ^0.8.20;
 
 import { OFT } from "@layerzerolabs/oft-evm/contracts/OFT.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
-import "hardhat/console.sol";
 
 contract Token is OFT {
-
     address public creator;
-    string public metadataURI; // Stores IPFS metadata JSON URI
-    uint256 public constant _totalSupply = 1_000_000 ether;  // Fixed total supply
-    uint32 public eid;
+    string public metadataURI;
+
     constructor(
+        address _creator,
         string memory _name,
         string memory _symbol,
-        address _creator,
-        address _lzEndpoint
-    ) OFT(_name, _symbol, _lzEndpoint, _creator) Ownable(_creator) { }
-
-    function initializeToken(
         string memory _metadataURI,
-        address _creator,
-        uint32 _eid
-    ) external {
-        console.log("Initializing token");
-        console.log("Token creator: ", _creator);
-        console.log("Token eid: ", _eid);
-        console.log("Token metadataURI: ", _metadataURI);
-        eid = _eid;
+        uint256 _totalSupply,
+        address _lzEndpoint,
+        address _delegate
+    ) OFT(_name, _symbol, _lzEndpoint, _delegate) Ownable(_delegate) {
         creator = _creator;
         metadataURI = _metadataURI;
-        _credit(msg.sender, _totalSupply, _eid);
+        if (_totalSupply > 0) {
+            _mint(msg.sender, _totalSupply);
+        }
     }
 
-    function mint(address receiver, uint256 mintQty) external onlyOwner {
-        require(receiver != address(0), "Cannot mint to zero address");
-        _credit(receiver, mintQty, eid);
+    // Override mint to add owner check
+    function mint(address receiver, uint256 mintQty) external {
+        require(msg.sender == owner(), "Mint can only be called by the owner");
+        _mint(receiver, mintQty);
     }
 
+    // Override burn from ERC20Burnable to add owner check
+    function burn(uint256 amount) public virtual {
+        require(msg.sender == owner() || msg.sender == _msgSender(), "Not authorized to burn");
+        _burn(_msgSender(), amount);
+    }
+
+    // Override burnFrom to add owner check
+    function burnFrom(address account, uint256 amount) public virtual {
+        require(msg.sender == owner() || msg.sender == account, "Not authorized to burn");
+        _spendAllowance(account, _msgSender(), amount);
+        _burn(account, amount);
+    }
 }

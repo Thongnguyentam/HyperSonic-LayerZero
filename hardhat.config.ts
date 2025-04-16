@@ -45,19 +45,12 @@ const config: HardhatUserConfig = {
                 settings: {
                     optimizer: {
                         enabled: true,
-                        runs: 200,
+                        runs: 100,
                     },
-                    // viaIR: true,
+                    viaIR: true,
                 },
             },
         ],
-    },
-    ignition: {
-        requiredConfirmations: 1,
-    },
-
-    gasReporter: {
-        enabled: true,
     },
     contractSizer: {
         alphaSort: true,
@@ -66,9 +59,9 @@ const config: HardhatUserConfig = {
         strict: false,
     },
     networks: {
-        'sepolia-arbitrum-testnet': {
-            eid: EndpointId.ARBSEP_V2_TESTNET,
-            url: process.env.RPC_URL_ARBSEP || 'https://arbitrum-sepolia.drpc.org',
+        'moonbase-moonbeam-testnet': {
+            eid: EndpointId.MOONBEAM_V2_TESTNET,
+            url: process.env.RPC_URL_MOONBASE || 'https://rpc.api.moonbase.moonbeam.network',
             accounts,
         },
         'sonic-testnet': {
@@ -83,7 +76,7 @@ const config: HardhatUserConfig = {
     },
     namedAccounts: {
         deployer: {
-            default: 0, // wallet address of index[0], of the mnemonic in .env
+            default: 0,
         },
     },
 }
